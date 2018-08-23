@@ -500,7 +500,8 @@ define([
         var n = json.execution_count || ' ';
         var toinsert = this.create_output_area();
         var sel = $('<select/>');
-        sel.attr('style', 'position:absolute; top:10px; right:10px;');
+        sel.addClass('mimetype_selector')
+        // sel.attr('style', 'position:absolute; top:10px; right:10px;');
         var keys = Object.keys(json.data);
         var opt = $('<option>').attr('val', 'Auto').attr('selected', 'true').text('Auto');
         sel.append(opt);
@@ -700,15 +701,52 @@ define([
     OutputArea.prototype.append_display_data = function (json, handle_inserted) {
         var toinsert = this.create_output_area();
         this._record_display_id(json, toinsert);
-        if (this.append_mime_type(json, toinsert, handle_inserted)) {
-            this._safe_append(toinsert);
-            // If we just output latex, typeset it.
-            if ((json.data[MIME_LATEX] !== undefined) ||
-                (json.data[MIME_HTML] !== undefined) ||
-                (json.data[MIME_MARKDOWN] !== undefined)) {
-                this.typeset();
-            }
+        
+        var sel = $('<select/>');
+        sel.addClass('mimetype_selector')
+        // sel.attr('style', 'position:absolute; top:5.6px; right:10px;');
+        var keys = Object.keys(json.data);
+        var opt = $('<option>').attr('val', 'Auto').attr('selected', 'true').text('Auto');
+        sel.append(opt);
+        for (var i=0; i< keys.length; i++){
+          var k= keys[i];
+          var opt = $('<option>').attr('val', k).text(k);
+          sel.append(opt);
         }
+        
+        if (keys.length > 1){
+          toinsert.append(sel);
+        }
+        this._core_insert(json, toinsert, 'Auto');
+        var that = this;
+        sel.on('change', function(){
+          var v = sel.val()
+          var jcopy;
+          if (v!= 'Auto'){
+            var data = {};
+            data[v] = json.data[v];
+          
+            jcopy = {
+              metadata:json.metadata,
+              output_type:json.output_type,
+              data:data
+            };
+          } else {
+            jcopy = json;
+          }
+
+          that._core_insert(jcopy, toinsert, sel.val());
+        
+        });
+        // if (this.append_mime_type(json, toinsert, handle_inserted)) {
+        //     this._safe_append(toinsert);
+        //     // If we just output latex, typeset it.
+        //     if ((json.data[MIME_LATEX] !== undefined) ||
+        //         (json.data[MIME_HTML] !== undefined) ||
+        //         (json.data[MIME_MARKDOWN] !== undefined)) {
+        //         this.typeset();
+        //     }
+        // }
     };
 
     OutputArea.safe_outputs = {};
